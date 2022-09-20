@@ -18,9 +18,14 @@ type TableOptions func(*TableDefinition)
 //go:embed templates/*.go.tpl
 var TemplatesFS embed.FS
 
-func valueToSchemaType(v reflect.Type) (schema.ValueType, error) {
+func valueToSchemaType(v reflect.Type, override func(reflect.Type) schema.ValueType) (schema.ValueType, error) {
+	if custom := override(v); custom != schema.TypeInvalid {
+		return custom, nil
+	}
 	k := v.Kind()
 	switch k {
+	case reflect.Pointer:
+		return valueToSchemaType(v.Elem(), override)
 	case reflect.String:
 		return schema.TypeString, nil
 	case reflect.Bool:
@@ -38,8 +43,6 @@ func valueToSchemaType(v reflect.Type) (schema.ValueType, error) {
 			return schema.TypeTimestamp, nil
 		}
 		return schema.TypeJSON, nil
-	case reflect.Pointer:
-		return valueToSchemaType(v.Elem())
 	case reflect.Slice:
 		switch v.Elem().Kind() {
 		case reflect.String:
@@ -80,7 +83,7 @@ func WithUnwrapFieldsStructs(fields []string) TableOptions {
 	}
 }
 
-// Unwrap all fields that are embedded structs (1 level deep only)
+// WithUnwrapAllEmbeddedStructs unwraps all fields that are embedded structs (1 level deep only)
 func WithUnwrapAllEmbeddedStructs() TableOptions {
 	return func(t *TableDefinition) {
 		t.unwrapAllEmbeddedStructFields = true
@@ -88,10 +91,16 @@ func WithUnwrapAllEmbeddedStructs() TableOptions {
 }
 
 // WithValueTypeOverride sets a function that can override the schema type for specific fields. Return `nil` to fall back to default behavior.
-func WithValueTypeOverride(resolver func(reflect.StructField) *schema.ValueType) TableOptions {
-	return func(t *TableDefinition) {
-		t.valueTypeOverride = resolver
+func WithValueTypeOverride(resolver func(any) schema.ValueType) TableOptions {
+	return func(definition *TableDefinition) {
+		definition.valueTypeOverride = func(t reflect.Type) schema.ValueType {
+			return resolver(reflect.New(t).Interface())
+		}
 	}
+}
+
+func defaultValueTypeOverride(reflect.Type) schema.ValueType {
+	return schema.TypeInvalid
 }
 
 func defaultTransformer(field reflect.StructField) string {
@@ -146,17 +155,7 @@ func (t *TableDefinition) addColumnFromField(field reflect.StructField, parent *
 		return
 	}
 
-	var overrideType *schema.ValueType
-	if t.valueTypeOverride != nil {
-		overrideType = t.valueTypeOverride(field)
-	}
-	var columnType schema.ValueType
-	var err error
-	if overrideType == nil {
-		columnType, err = valueToSchemaType(field.Type)
-	} else {
-		columnType = *overrideType
-	}
+	columnType, err := valueToSchemaType(field.Type, t.valueTypeOverride)
 	if err != nil {
 		fmt.Printf("skipping field %s on table %s, got err: %v\n", field.Name, t.Name, err)
 		return
@@ -181,8 +180,9 @@ func (t *TableDefinition) addColumnFromField(field reflect.StructField, parent *
 // NewTableFromStruct creates a new TableDefinition from a struct by inspecting its fields
 func NewTableFromStruct(name string, obj interface{}, opts ...TableOptions) (*TableDefinition, error) {
 	t := &TableDefinition{
-		Name:            name,
-		nameTransformer: defaultTransformer,
+		Name:              name,
+		nameTransformer:   defaultTransformer,
+		valueTypeOverride: defaultValueTypeOverride,
 	}
 	for _, opt := range opts {
 		opt(t)
