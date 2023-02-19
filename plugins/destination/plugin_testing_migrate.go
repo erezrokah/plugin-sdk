@@ -54,6 +54,7 @@ func testMigration(ctx context.Context, p *Plugin, logger zerolog.Logger, spec s
 	}
 
 	resourcesRead, err := p.readAll(ctx, target, sourceName)
+	sortCQTypes(target, resourcesRead)
 	if err != nil {
 		return fmt.Errorf("failed to read all: %w", err)
 	}
@@ -95,6 +96,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		source := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -104,6 +106,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		target := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -132,6 +135,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		source := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -141,6 +145,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		target := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -172,6 +177,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		source := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -185,6 +191,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		target := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -209,6 +216,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		source := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -225,6 +233,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		target := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -249,6 +258,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		source := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
@@ -262,6 +272,7 @@ func (*PluginTestSuite) destinationPluginTestMigrate(
 		target := &schema.Table{
 			Name: tableName,
 			Columns: []schema.Column{
+				schema.CqIDColumn,
 				{
 					Name: "id",
 					Type: schema.TypeUUID,
