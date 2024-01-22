@@ -92,14 +92,26 @@ func (s *Inet) Set(val any) error {
 		}
 		s.Value = ipnet
 	case *net.IPNet:
+		if value == nil {
+			s.Valid = false
+			return nil
+		}
 		if err := s.Set(*value); err != nil {
 			return err
 		}
 	case *net.IP:
+		if value == nil {
+			s.Valid = false
+			return nil
+		}
 		if err := s.Set(*value); err != nil {
 			return err
 		}
 	case *string:
+		if value == nil {
+			s.Valid = false
+			return nil
+		}
 		if err := s.Set(*value); err != nil {
 			return err
 		}
